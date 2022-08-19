@@ -6,40 +6,36 @@ use App\Db;
 
 class TaskQueue
 {
-    public function insert($params = [])
+
+    /**
+     * sets links which were under work when process stopped to unhandled state
+     *
+     * @return void
+     */
+    public static function updateTaskQueue()
+    {
+        $db = new Db();
+        $sql = "UPDATE `task_schedule` SET `status` = 0 WHERE status = 1";
+        $db->query($sql);
+    }
+
+    public static function insert($params = [])
     {
         $db = new Db();
         $sql = "INSERT INTO `task_schedule`(`link`) VALUES (:link)";
         $db->query($sql, $params);
     }
 
-    public function getNextLink($db)
+    public static function getNextLink($db)
     {
-        $sql = "SELECT * FROM task_schedule WHERE status = 0 LIMIT 1; UPDATE task_queue SET status = 1 WHERE status = 0 LIMIT 1;";
+        $sql = "SELECT * FROM task_schedule WHERE status = 0 LIMIT 1; UPDATE task_schedule SET status = 1 WHERE status = 0 LIMIT 1;";
         return $db->query($sql);
     }
 
-    public function setAsFinishedWork($db,$params = [])
+    public static function setAsFinishedWork($db, $params = [])
     {
         $sql = "UPDATE task_schedule SET status = 2 WHERE id = :id";
         return $db->query($sql, $params);
-    }
-
-    public function collectDataFromFile($db,$file)
-    {
-        foreach ($file->find('main') as $main) {
-            foreach ($main->find('tbody') as $tbody) {
-                foreach ($tbody->find('tr') as $tr) {
-                    foreach ($tr->find('td.Question') as $tdQuestion) {
-                        foreach ($tdQuestion->find('a') as $aQuestion) {
-                            $sql = "INSERT INTO `questions`(`question`) VALUES (:question)";
-                            $db->query($sql, [':question' => $aQuestion->innertext]);
-                        }
-                    }
-                }
-            }
-        }
-
     }
 
 }
