@@ -28,8 +28,15 @@ class TaskQueue
 
     public static function getNextLink($db)
     {
-        $sql = "SELECT * FROM task_schedule WHERE status = 0 LIMIT 1; UPDATE task_schedule SET status = 1 WHERE status = 0 LIMIT 1;";
-        return $db->query($sql);
+        $sql = "SELECT * FROM task_schedule WHERE status = 0 LIMIT 1";
+        $row = $db->query($sql);
+
+        if ($row != null) {
+            $sql = "UPDATE task_schedule SET status = 1 WHERE id = :id LIMIT 1";
+            $db->query($sql,[':id' => $row[0]->id]);
+        }
+
+        return $row;
     }
 
     public static function setAsFinishedWork($db, $params = [])

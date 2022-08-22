@@ -82,12 +82,16 @@ class Parcer
      */
     public function connectQuestionAndAnswer($db, $questionId, $answerId)
     {
-        $sql = "SELECT * FROM questions_answers WHERE question_id=:question_id AND answer_id=:answer_id";
-        $connection = $db->query($sql,[':question_id' => $questionId, ':answer_id' => $answerId]);
+
+        $sql = "SELECT * FROM answers_questions WHERE question_id=:question_id AND answer_id=:answer_id";
+        $connection = $db->query($sql,[':answer_id' => $answerId, ':question_id' => $questionId]);
 
         if ($connection == null) {
-            $sql = "INSERT INTO `questions_answers`(`question_id`, `answer_id`) VALUES (:question_id,:answer_id)";
-            $db->query($sql, [':question_id' => $questionId, ':answer_id' => $answerId]);
+            try {
+                $sql = "INSERT INTO `answers_questions`(`question_id`, `answer_id`) VALUES (:question_id,:answer_id)";
+                $db->query($sql, [':answer_id' => $answerId, ':question_id' => $questionId]);
+            } catch (\Exception) {
+            }
         }
 
     }
