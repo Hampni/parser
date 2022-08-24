@@ -1,0 +1,17 @@
+{
+    "name": "hampni/parser",
+    "description": "parser",
+    "authors": [
+        {
+            "name": "Hampni",
+            "email": "magnus9044@gmail.com"
+        }
+    ],
+    "require": {
+        "vlucas/phpdotenv": "^5.4",
+        "monolog/monolog": "^3.2",
+      "ext-redis": "*",
+        "ext-pcntl": "*",
+      "ext-dom": "*"
+    }
+}

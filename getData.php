@@ -1,13 +1,17 @@
 <?php
+require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/autoload.php';
 require __DIR__ . '/simple_html_dom.php';
 
-//$db = new \App\Db();
-//$nextLink = \App\Model\TaskQueue::getNextLink($db);
-//var_dump($nextLink);
+use Monolog\Level;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
 \App\Model\TaskQueue::updateTaskQueue();
-
 function makeForks($forks)
 {
     echo 'Start collecting data!' . PHP_EOL;
@@ -18,7 +22,8 @@ function makeForks($forks)
 
         $pid = pcntl_fork();
 
-        sleep(0.2);
+        $log = new Logger('Info');
+        $log->pushHandler(new StreamHandler(__DIR__ . '/log.txt', Level::Warning));
 
         switch ($pid) {
             case -1:
@@ -38,7 +43,8 @@ function makeForks($forks)
                         echo 'finished with ' . $nextLink[0]->id . "\n";
                         \App\Model\TaskQueue::setAsFinishedWork($db, ['id' => $nextLink[0]->id]);
 
-                        file_put_contents(__DIR__ . '/log.txt', 'link ' . $nextLink[0]->link . ' finished parsing on ' . date('d-m-y h:i:s') . PHP_EOL, FILE_APPEND);
+                        $log->warning('link ' . $nextLink[0]->link . ' finished parsing');
+
                     }
                     $nextLink = \App\Model\TaskQueue::getNextLink($db);
                 }
@@ -47,5 +53,5 @@ function makeForks($forks)
     }
 }
 
-makeForks(100);
+makeForks($_ENV['FORKS_NUMBER']);
 
