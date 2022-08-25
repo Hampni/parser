@@ -1,7 +1,36 @@
 <?php
+declare(ticks = 1);
 ini_set("default_socket_timeout", -1);
 require __DIR__ . '/simple_html_dom.php';
 require __DIR__ . '/autoload.php';
+
+var_dump($_ENV);
+
+
+function sig_handler($signo)
+{
+
+    switch ($signo) {
+        case SIGTERM:
+            echo $signo;
+            echo "Получен сигнал stop...\n";
+            exit;
+        case SIGHUP:
+            break;
+        case SIGUSR1:
+            echo $signo;
+            echo "Получен сигнал SIGUSR1...\n";
+            break;
+        default:
+    }
+
+}
+
+pcntl_signal(SIGTERM, "sig_handler");
+pcntl_signal(SIGHUP,  "sig_handler");
+pcntl_signal(SIGUSR1, "sig_handler");
+
+
 
 $r = new Redis();
 $r->connect('127.0.0.1', 6379);
@@ -20,7 +49,7 @@ while (true) {
     }
 
     // check limit
-    if (count($childs) >= 100) {
+    if (count($childs) >= 3) {
         continue;
     }
 
@@ -38,43 +67,10 @@ while (true) {
                 $childs[] = $pid;
             } else {
                 //start parcing
+
+//                posix_kill(posix_getpid(), SIGTERM);
+
                 $parser->parse($link);
-//                $file = file_get_html($link);
-//                foreach ($file->find('main') as $main) {
-//                    foreach ($main->find('tbody') as $tbody) {
-//                        foreach ($tbody->find('tr') as $tr) {
-//                            $question = '';
-//                            //find question
-//                            foreach ($tr->find('td.Question') as $tdQuestion) {
-//                                foreach ($tdQuestion->find('a') as $aQuestion) {
-//                                    $r = new Redis();
-//                                    $r->connect('127.0.0.1', 6379);
-//
-//                                    $question = ['question' => $aQuestion->innertext];
-//                                    if ($r->lRem('questions', json_encode($question), 1)) {
-//                                        $r->rPush('questions', json_encode($question));
-//                                    } else {
-//                                        $r->rPush('questions', json_encode($question));
-//                                    }
-//                                }
-//                            }
-//                            foreach ($tr->find('td.AnswerShort') as $tdAnswer) {
-//                                foreach ($tdAnswer->find('a') as $aAnswer) {
-//                                    $r = new Redis();
-//                                    $r->connect('127.0.0.1', 6379);
-//
-//                                    $answer = ['question' => $aAnswer->innertext];
-//
-//                                    if ($r->lRem('answers', json_encode($answer), 1)) {
-//                                        $r->rPush('answers', json_encode($answer));
-//                                    } else {
-//                                        $r->rPush('answers', json_encode($answer));
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
 
                 echo 'finished with ' . $link . PHP_EOL;
                 exit();
@@ -94,3 +90,5 @@ while (true) {
         exit();
     }
 }
+
+
