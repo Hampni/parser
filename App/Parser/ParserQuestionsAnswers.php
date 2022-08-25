@@ -2,10 +2,8 @@
 
 namespace App\Parser;
 
-use App\Db;
-use App\Model\Answer;
-use App\Model\Question;
 use RedisException;
+use App\Interfaces\ParserInterface;
 
 class ParserQuestionsAnswers implements ParserInterface
 {
@@ -13,52 +11,6 @@ class ParserQuestionsAnswers implements ParserInterface
     public function parse($link)
     {
         $this->collectDataFromFile($link);
-    }
-
-    /**
-     * get this question id
-     *
-     * @param $question
-     * @return mixed
-     * @throws RedisException
-     */
-    public function getQuestionId($question)
-    {
-        //connect to redis
-        $r = new \Redis();
-        $r->connect('127.0.0.1', 6379);
-
-
-        //taking question from db
-
-        //checking if question exists
-        //if does not exist insert new question
-
-        //return question
-        return null;
-    }
-
-    /**
-     * get this answer id
-     *
-     * @param $answer
-     * @return mixed
-     * @throws RedisException
-     */
-    public function getAnswerId($answer)
-    {
-
-        //connect to redis
-        $r = new \Redis();
-        $r->connect('127.0.0.1', 6379);
-
-        //taking answer from db
-
-        //checking if answer exists
-        //if does not exist insert new answer
-
-        //return answer
-        return null;
     }
 
     /**
@@ -74,8 +26,11 @@ class ParserQuestionsAnswers implements ParserInterface
         $r = new \Redis();
         $r->connect('127.0.0.1', 6379);
 
-        //insert new relation question_answer
-
+        $question_answer = [
+            'question' => $question,
+            'answer' => $answer
+        ];
+        $r->rPush('questions_answers', json_encode($question_answer));
     }
 
     /**
@@ -88,7 +43,9 @@ class ParserQuestionsAnswers implements ParserInterface
     public function collectDataFromFile($link)
     {
 
-        foreach ($link->find('main') as $main) {
+        $file = file_get_html($link);
+
+        foreach ($file->find('main') as $main) {
             foreach ($main->find('tbody') as $tbody) {
                 foreach ($tbody->find('tr') as $tr) {
                     $question = '';
@@ -98,6 +55,9 @@ class ParserQuestionsAnswers implements ParserInterface
                     foreach ($tr->find('td.Question') as $tdQuestion) {
                         foreach ($tdQuestion->find('a') as $aQuestion) {
                             $question = $aQuestion->innertext;
+
+                            //adding new question
+                            $this->addQuestion($question);
                         }
                     }
 
@@ -105,20 +65,41 @@ class ParserQuestionsAnswers implements ParserInterface
                     foreach ($tr->find('td.AnswerShort') as $tdAnswer) {
                         foreach ($tdAnswer->find('a') as $aAnswer) {
                             $answer = $aAnswer->innertext;
+
+                            //adding new answer
+                            $this->addAnswer($answer);
                         }
                     }
-
-                    //getting question id
-                    $question = $this->getQuestionId($question);
-
-                    //getting answer id
-                    $answer = $this->getAnswerId($answer);
 
                     //making connection between them
                     $this->connectQuestionAndAnswer($question, $answer);
                 }
             }
         }
+    }
+
+    /**
+     * @param $question
+     * @return void
+     * @throws RedisException
+     */
+    public function addQuestion($question)
+    {
+        $r = new \Redis();
+        $r->connect('127.0.0.1', 6379);
+        $r->hSet('questions', $question, $question);
+    }
+
+    /**
+     * @param $answer
+     * @return void
+     * @throws RedisException
+     */
+    public function addAnswer($answer)
+    {
+        $r = new \Redis();
+        $r->connect('127.0.0.1', 6379);
+        $r->hSet('answers', $answer, $answer);
     }
 
 }

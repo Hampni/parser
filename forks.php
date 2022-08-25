@@ -1,12 +1,12 @@
 <?php
 ini_set("default_socket_timeout", -1);
 require __DIR__ . '/simple_html_dom.php';
+require __DIR__ . '/autoload.php';
 
 $r = new Redis();
 $r->connect('127.0.0.1', 6379);
 
 $parser = new \App\Parser\ParserQuestionsAnswers();
-
 $childs = [];
 
 while (true) {
@@ -20,7 +20,7 @@ while (true) {
     }
 
     // check limit
-    if (count($childs) >=100) {
+    if (count($childs) >= 100) {
         continue;
     }
 
@@ -47,36 +47,50 @@ while (true) {
 //                            //find question
 //                            foreach ($tr->find('td.Question') as $tdQuestion) {
 //                                foreach ($tdQuestion->find('a') as $aQuestion) {
-//                                    $question = $aQuestion->innertext;
 //                                    $r = new Redis();
 //                                    $r->connect('127.0.0.1', 6379);
-//                                    $r->rPush('questions', '{"question": "' . $question . '"}');
+//
+//                                    $question = ['question' => $aQuestion->innertext];
+//                                    if ($r->lRem('questions', json_encode($question), 1)) {
+//                                        $r->rPush('questions', json_encode($question));
+//                                    } else {
+//                                        $r->rPush('questions', json_encode($question));
+//                                    }
 //                                }
 //                            }
 //                            foreach ($tr->find('td.AnswerShort') as $tdAnswer) {
 //                                foreach ($tdAnswer->find('a') as $aAnswer) {
-//                                    $answer = $aAnswer->innertext;
 //                                    $r = new Redis();
 //                                    $r->connect('127.0.0.1', 6379);
-//                                    $r->rPush('answers', '{"answer": "' . $answer . '"}');
 //
+//                                    $answer = ['question' => $aAnswer->innertext];
+//
+//                                    if ($r->lRem('answers', json_encode($answer), 1)) {
+//                                        $r->rPush('answers', json_encode($answer));
+//                                    } else {
+//                                        $r->rPush('answers', json_encode($answer));
+//                                    }
 //                                }
 //                            }
 //                        }
 //                    }
 //                }
-//                echo 'finished with ' . $link . PHP_EOL;
+
+                echo 'finished with ' . $link . PHP_EOL;
                 exit();
             }
         }
     } elseif (count($childs) == 0) {
         echo 'finish all' . PHP_EOL;
-//        $r = new Redis();
-//        $r->connect('127.0.0.1', 6379);
-//        echo $r->lLen('questions') . "\n";
-//        $r = new Redis();
-//        $r->connect('127.0.0.1', 6379);
-//        echo $r->lLen('answers') . "\n";
+        $r = new Redis();
+        $r->connect('127.0.0.1', 6379);
+        echo $r->hLen('questions') . "\n";
+        $r = new Redis();
+        $r->connect('127.0.0.1', 6379);
+        echo $r->hLen('answers') . "\n";
+        $r = new Redis();
+        $r->connect('127.0.0.1', 6379);
+        echo $r->lLen('questions_answers') . "\n";
         exit();
     }
 }

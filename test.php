@@ -4,7 +4,8 @@ $r = new Redis();
 $r->connect('127.0.0.1', 6379);
 $r->del('questions');
 $r->del('answers');
-for ($i = 1; $i <= 4746; $i++) {
+$r->del('questions_answers');
+for ($i = 1; $i <= 4346; $i++) {
     $r->lPop('linksPage');
 }
 //var_dump($r->lPop('linksPage'));
@@ -20,3 +21,5 @@ for ($i = 1; $i <= 4746; $i++) {
 echo $r->lLen('linksPage') . "\n";
 echo $r->lLen('questions') . "\n";
 echo $r->lLen('answers') . "\n";
+echo $r->lLen('questions_answers') . "\n";
+

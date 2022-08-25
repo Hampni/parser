@@ -1,10 +1,8 @@
 <?php
 
-namespace App\Parser;
+namespace App\Interfaces;
 
 interface ParserInterface
 {
-
     public function parse($link);
-
 }
