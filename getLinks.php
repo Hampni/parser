@@ -1,6 +1,11 @@
 <?php
 require __DIR__ . '/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/simple_html_dom.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
 echo 'Collecting links, please wait...' . PHP_EOL;
 
 $r = new Redis();
@@ -19,7 +24,7 @@ foreach ($file->find('main') as $main) {
     foreach ($main->find('li') as $li) {
         foreach ($li->find('a') as $a) {
             $r->rPush('links', '{"link": "https://www.kreuzwort-raetsel.net/'.$a->href.'"}');
-   //         $letterLinks[] = 'https://www.kreuzwort-raetsel.net/' . $a->href;
+            //         $letterLinks[] = 'https://www.kreuzwort-raetsel.net/' . $a->href;
         }
     }
 }
@@ -38,7 +43,7 @@ while (true) {
     }
 
     // check limit
-    if (count($childs) >= 5) {
+    if (count($childs) >= $_ENV['FORKS_NUMBER']) {
         continue;
     }
 
@@ -59,7 +64,7 @@ while (true) {
                 $childs[] = $pid;
             } else {
                 $r = new Redis();
-                $r->connect('127.0.0.1', 6379);
+                $r->connect($_ENV['APP_HOST'], 6379);
 
                 $file = file_get_html($link);
 
@@ -80,25 +85,4 @@ while (true) {
         exit();
     }
 }
-
-
-//foreach ($letterLinks as $letterLink) {
-//    $file = file_get_html($letterLink);
-//    foreach ($file->find('main') as $main) {
-//        foreach ($main->find('li') as $li) {
-//            foreach ($li->find('a') as $a) {
-//                $pageLink = 'https://www.kreuzwort-raetsel.net/' . $a->href;
-//
-//                //inserting links to task queue
-//                $r->rPush('links', '{"link": "https://www.kreuzwort-raetsel.net/' . $a->href . '"}');
-//
-////                \App\Model\TaskQueue::insert([':link' => $pageLink]);
-//            }
-//        }
-//    }
-//}
-//
-//
-//var_dump($r->lRange('links', 0, -1));
-
 

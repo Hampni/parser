@@ -2,6 +2,9 @@
 
 namespace App\Parser;
 
+use App\Db;
+use App\Models\Question;
+use App\Models\Answer;
 use RedisException;
 use App\Interfaces\ParserInterface;
 
@@ -19,18 +22,20 @@ class ParserQuestionsAnswers implements ParserInterface
      * @return void
      * @throws RedisException
      */
-    public function connectQuestionAndAnswer($question, $answer)
+    public function connectQuestionAndAnswer($db, $questionId, $answerId)
     {
 
-        //connect to redis
-        $r = new \Redis();
-        $r->connect('127.0.0.1', 6379);
+        $sql = "SELECT * FROM answers_questions WHERE question_id=:question_id AND answer_id=:answer_id";
+        $connection = $db->query($sql, [':answer_id' => $answerId, ':question_id' => $questionId]);
 
-        $question_answer = [
-            'question' => $question,
-            'answer' => $answer
-        ];
-        $r->rPush('questions_answers', json_encode($question_answer));
+        if ($connection == null) {
+            try {
+                $sql = "INSERT INTO `answers_questions`(`question_id`, `answer_id`) VALUES (:question_id,:answer_id)";
+                $db->query($sql, [':answer_id' => $answerId, ':question_id' => $questionId]);
+            } catch (\Exception) {
+                echo 'attempt to insert duplicate';
+            }
+        }
     }
 
     /**
@@ -43,13 +48,15 @@ class ParserQuestionsAnswers implements ParserInterface
     public function collectDataFromFile($link)
     {
 
+        $db = new Db();
+
         $file = file_get_html($link);
 
         foreach ($file->find('main') as $main) {
             foreach ($main->find('tbody') as $tbody) {
                 foreach ($tbody->find('tr') as $tr) {
-                    $question = '';
-                    $answer = '';
+                    $questionId = '';
+                    $answeiDr = '';
 
                     //find question
                     foreach ($tr->find('td.Question') as $tdQuestion) {
@@ -57,7 +64,7 @@ class ParserQuestionsAnswers implements ParserInterface
                             $question = $aQuestion->innertext;
 
                             //adding new question
-                            $this->addQuestion($question);
+                            $questionId = $this->addQuestion($db, $question);
                         }
                     }
 
@@ -67,39 +74,77 @@ class ParserQuestionsAnswers implements ParserInterface
                             $answer = $aAnswer->innertext;
 
                             //adding new answer
-                            $this->addAnswer($answer);
+                            $answerId = $this->addAnswer($db, $answer);
                         }
                     }
 
                     //making connection between them
-                    $this->connectQuestionAndAnswer($question, $answer);
+                    $this->connectQuestionAndAnswer($db, $questionId, $answerId);
                 }
             }
         }
     }
 
     /**
+     * @param $db
      * @param $question
-     * @return void
-     * @throws RedisException
+     * @return mixed
      */
-    public function addQuestion($question)
+    public function addQuestion($db, $question)
     {
-        $r = new \Redis();
-        $r->connect('127.0.0.1', 6379);
-        $r->hSet('questions', $question, $question);
+
+
+        $returnedQuestion = Question::getQuestion($db, $question);
+
+        //checking if question with such id exists
+        //if such id does not exist insert new question
+        if ($returnedQuestion == null) {
+            try {
+                $newQuestion = new Question($question);
+                $newQuestion->insert($db);
+                $idQuestion = $db->getLastId();
+
+                //if another process already inserted such question take its id
+            } catch (\Exception $error) {
+                if ($error->errorInfo[0] == '23000') {
+                    $returnedQuestion = Question::getQuestion($db, $question);
+                    $idQuestion = $returnedQuestion[0]->id;
+                }
+            }
+        } else {
+            $idQuestion = $returnedQuestion[0]->id;
+        }
+        return $idQuestion;
+
     }
 
     /**
+     * @param $db
      * @param $answer
-     * @return void
-     * @throws RedisException
+     * @return mixed
      */
-    public function addAnswer($answer)
+    public function addAnswer($db, $answer)
     {
-        $r = new \Redis();
-        $r->connect('127.0.0.1', 6379);
-        $r->hSet('answers', $answer, $answer);
+
+        $returnedAnswer = Answer::getAnswer($db, $answer);
+        //checking if answer with such id exists
+        //if such id does not exist insert new question
+        if ($returnedAnswer == null) {
+            try {
+                $newAnswer = new Answer($answer);
+                $newAnswer->insert($db);
+                $idAnswer = $db->getLastId();
+            } catch (\Exception $error) {
+                if ($error->errorInfo[0] == '23000') {
+                    $returnedAnswer = Answer::getAnswer($db, $answer);
+                    $idAnswer = $returnedAnswer[0]->id;
+                }
+            }
+        } else {
+            $idAnswer = $returnedAnswer[0]->id;
+        }
+        return $idAnswer;
+
     }
 
 }

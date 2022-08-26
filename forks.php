@@ -1,11 +1,12 @@
 <?php
 declare(ticks = 1);
 ini_set("default_socket_timeout", -1);
-require __DIR__ . '/simple_html_dom.php';
 require __DIR__ . '/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/simple_html_dom.php';
 
-var_dump($_ENV);
-
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
 function sig_handler($signo)
 {
@@ -33,7 +34,7 @@ pcntl_signal(SIGUSR1, "sig_handler");
 
 
 $r = new Redis();
-$r->connect('127.0.0.1', 6379);
+$r->connect($_ENV['APP_HOST'], 6379);
 
 $parser = new \App\Parser\ParserQuestionsAnswers();
 $childs = [];
@@ -49,7 +50,7 @@ while (true) {
     }
 
     // check limit
-    if (count($childs) >= 3) {
+    if (count($childs) >= $_ENV['FORKS_NUMBER']) {
         continue;
     }
 
@@ -78,15 +79,6 @@ while (true) {
         }
     } elseif (count($childs) == 0) {
         echo 'finish all' . PHP_EOL;
-        $r = new Redis();
-        $r->connect('127.0.0.1', 6379);
-        echo $r->hLen('questions') . "\n";
-        $r = new Redis();
-        $r->connect('127.0.0.1', 6379);
-        echo $r->hLen('answers') . "\n";
-        $r = new Redis();
-        $r->connect('127.0.0.1', 6379);
-        echo $r->lLen('questions_answers') . "\n";
         exit();
     }
 }
