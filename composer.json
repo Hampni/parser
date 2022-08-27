@@ -14,6 +14,7 @@
     "ext-pcntl": "*",
     "ext-dom": "*",
     "ext-posix": "*",
-    "ext-pdo": "*"
+    "ext-pdo": "*",
+    "ext-curl": "*"
   }
 }

@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  tor:
+    image: dperson/torproxy
+    ports:
+      - '8118:8118'
+      - '9050:9050'
+  parser:
+    build: ./
+    depends_on:
+       tor:
+          condition: service_healthy
