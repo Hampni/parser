@@ -5,26 +5,41 @@ require __DIR__ . '/simple_html_dom.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
-
-echo 'Collecting links, please wait...' . PHP_EOL;
-
 $r = new Redis();
 $r->connect('127.0.0.1', 6379);
 
+echo 'Collecting links, please wait...' . PHP_EOL;
+
 $r->del('linksPage');
 
+//proxy
+$proxy = "localhost:9050";
+
 //link to main page of the site kreuzwort-raetsel.net
-$requestLink = 'https://www.kreuzwort-raetsel.net/uebersicht.html';
+$url = 'https://www.kreuzwort-raetsel.net/uebersicht.html';
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+curl_setopt($ch, CURLOPT_PROXY, $proxy);
+curl_setopt($ch, CURLOPT_HEADER, false);
+$curl_scraped_page = curl_exec($ch);
+$error = curl_error($ch);
+curl_close($ch);
 
 $letterLinks = [];
-$file = file_get_html($requestLink);
+
+$file = new simple_html_dom();
+
+// Load HTML from a string
+$file->load($curl_scraped_page);
 
 //getting letter links
 foreach ($file->find('main') as $main) {
     foreach ($main->find('li') as $li) {
         foreach ($li->find('a') as $a) {
-            $r->rPush('links', '{"link": "https://www.kreuzwort-raetsel.net/'.$a->href.'"}');
-            //         $letterLinks[] = 'https://www.kreuzwort-raetsel.net/' . $a->href;
+            $r->rPush('links', '{"link": "https://www.kreuzwort-raetsel.net/' . $a->href . '"}');
         }
     }
 }
@@ -66,13 +81,29 @@ while (true) {
                 $r = new Redis();
                 $r->connect($_ENV['APP_HOST'], 6379);
 
-                $file = file_get_html($link);
+                //proxy
+                $proxy = "localhost:9050";
+
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $link);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+                curl_setopt($ch, CURLOPT_PROXY, $proxy);
+                curl_setopt($ch, CURLOPT_HEADER, 0);
+                $link_scraped_page = curl_exec($ch);
+                $error = curl_error($ch);
+                curl_close($ch);
+
+                $file = new simple_html_dom();
+
+                // Load HTML from a string
+                $file->load($link_scraped_page);
 
                 foreach ($file->find('main') as $main) {
                     foreach ($main->find('li') as $li) {
                         foreach ($li->find('a') as $a) {
                             //inserting links to task queue
-                            $r->rPush('linksPage', '{"page": "https://www.kreuzwort-raetsel.net/'.$a->href.'"}');
+                            $r->rPush('linksPage', '{"page": "https://www.kreuzwort-raetsel.net/' . $a->href . '"}');
                         }
                     }
                 }

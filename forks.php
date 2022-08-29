@@ -1,5 +1,4 @@
 <?php
-declare(ticks = 1);
 ini_set("default_socket_timeout", -1);
 require __DIR__ . '/autoload.php';
 require __DIR__ . '/vendor/autoload.php';
@@ -7,32 +6,6 @@ require __DIR__ . '/simple_html_dom.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
-
-function sig_handler($signo)
-{
-
-    switch ($signo) {
-        case SIGTERM:
-            echo $signo;
-            echo "Получен сигнал stop...\n";
-            exit;
-        case SIGHUP:
-            break;
-        case SIGUSR1:
-            echo $signo;
-            echo "Получен сигнал SIGUSR1...\n";
-            break;
-        default:
-    }
-
-}
-
-pcntl_signal(SIGTERM, "sig_handler");
-pcntl_signal(SIGHUP,  "sig_handler");
-pcntl_signal(SIGUSR1, "sig_handler");
-
-
-
 $r = new Redis();
 $r->connect($_ENV['APP_HOST'], 6379);
 
@@ -68,8 +41,6 @@ while (true) {
                 $childs[] = $pid;
             } else {
                 //start parcing
-
-//                posix_kill(posix_getpid(), SIGTERM);
 
                 $parser->parse($link);
 

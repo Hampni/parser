@@ -7,6 +7,7 @@ use App\Models\Question;
 use App\Models\Answer;
 use RedisException;
 use App\Interfaces\ParserInterface;
+use simple_html_dom;
 
 class ParserQuestionsAnswers implements ParserInterface
 {
@@ -50,13 +51,29 @@ class ParserQuestionsAnswers implements ParserInterface
 
         $db = new Db();
 
-        $file = file_get_html($link);
+        //proxy
+        $proxy = "localhost:9050";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $link);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+        curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        $curl_scraped_page = curl_exec($ch);
+        curl_close($ch);
+
+        // Create a DOM object
+        $file = new simple_html_dom();
+
+        // Load HTML from a string
+        $file->load($curl_scraped_page);
 
         foreach ($file->find('main') as $main) {
             foreach ($main->find('tbody') as $tbody) {
                 foreach ($tbody->find('tr') as $tr) {
                     $questionId = '';
-                    $answeiDr = '';
+                    $answerId = '';
 
                     //find question
                     foreach ($tr->find('td.Question') as $tdQuestion) {
