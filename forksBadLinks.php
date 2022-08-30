@@ -3,8 +3,6 @@
 $r = new Redis();
 $r->connect($_ENV['APP_HOST'], 6379);
 
-echo 'start working with bad links'. PHP_EOL;
-
 $parser = new \App\Parser\ParserQuestionsAnswers();
 $childs = [];
 
@@ -25,7 +23,7 @@ while (true) {
 
     if ($r->lLen('bad_links') > 0) {
         $link = json_decode($r->lPop('bad_links'))->page;
-        echo 'amount of bad links left = ' . $r->lLen('bad_links') . PHP_EOL;
+        echo 'amount of links left = ' . $r->lLen('bad_links') . PHP_EOL;
 
         if ($link) {
 
@@ -47,7 +45,6 @@ while (true) {
         echo 'finish all with bad links' . PHP_EOL;
         exit();
     }
-
 }
 
 

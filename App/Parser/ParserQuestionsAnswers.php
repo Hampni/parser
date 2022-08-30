@@ -106,7 +106,7 @@ class ParserQuestionsAnswers implements ParserInterface
             echo 'cannot parse link ' . PHP_EOL;
             $r = new \Redis();
             $r->connect($_ENV['APP_HOST'], 6379);
-            $r->rPush('bad_links',  '{"page": ' . $link . '}');
+            $r->rPush('bad_links', '{"page": "' . $link . '"}');
         }
     }
 
