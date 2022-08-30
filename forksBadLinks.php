@@ -1,5 +1,12 @@
 <?php
+ini_set('display_errors',1);
+ini_set("default_socket_timeout", -1);
+require __DIR__ . '/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/simple_html_dom.php';
 
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 $r = new Redis();
 $r->connect($_ENV['APP_HOST'], 6379);
 

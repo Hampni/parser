@@ -50,9 +50,7 @@ while (true) {
         }
     } elseif (count($childs) == 0) {
         echo 'finish all' . PHP_EOL;
-        if ($r->lLen('bad_links') > 0) {
-            include __DIR__ . '/forksBadLinks.php';
-        }
+
         exit();
     }
 }
