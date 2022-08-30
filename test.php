@@ -9,6 +9,7 @@ for ($i = 1; $i <= 4348; $i++) {
     $r->lPop('linksPage');
 }
 
+
 echo 'links: ' . $r->lLen('linksPage') . "\n";
 
 echo 'badlinks: ' . $r->lLen('bad_links'). "\n";
