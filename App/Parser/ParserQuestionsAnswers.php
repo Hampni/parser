@@ -14,7 +14,7 @@ class ParserQuestionsAnswers implements ParserInterface
 
     public function parse($link)
     {
-        $this->collectDataFromFile($link);
+        return $this->collectDataFromFile($link);
     }
 
     /**
@@ -40,10 +40,8 @@ class ParserQuestionsAnswers implements ParserInterface
     }
 
     /**
-     * starts data withdrawing
-     *
      * @param $link
-     * @return void
+     * @return string|void
      * @throws RedisException
      */
     public function collectDataFromFile($link)
@@ -97,6 +95,9 @@ class ParserQuestionsAnswers implements ParserInterface
 
                     //making connection between them
                     $this->connectQuestionAndAnswer($db, $questionId, $answerId);
+                    if ($questionId != null && $answerId != null) {
+                        return 'success';
+                    }
                 }
             }
         }

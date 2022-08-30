@@ -1,4 +1,5 @@
 <?php
+ini_set('display_errors',1);
 ini_set("default_socket_timeout", -1);
 require __DIR__ . '/autoload.php';
 require __DIR__ . '/vendor/autoload.php';
@@ -42,9 +43,12 @@ while (true) {
             } else {
                 //start parcing
 
-                $parser->parse($link);
+                if ($parser->parse($link) == 'success') {
+                    echo 'finished with ' . $link . PHP_EOL;
+                } else {
+                    echo 'cannot parse this link' . $link . PHP_EOL;
+                }
 
-                echo 'finished with ' . $link . PHP_EOL;
                 exit();
             }
         }
