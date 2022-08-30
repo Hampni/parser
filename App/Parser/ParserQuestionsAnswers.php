@@ -14,13 +14,13 @@ class ParserQuestionsAnswers implements ParserInterface
 
     public function parse($link)
     {
-        return $this->collectDataFromFile($link);
+        $this->collectDataFromFile($link);
     }
 
     /**
      * @param $question
      * @param $answer
-     * @return void
+     * @return string|void
      * @throws RedisException
      */
     public function connectQuestionAndAnswer($db, $questionId, $answerId)
@@ -41,7 +41,7 @@ class ParserQuestionsAnswers implements ParserInterface
 
     /**
      * @param $link
-     * @return string|void
+     * @return void
      * @throws RedisException
      */
     public function collectDataFromFile($link)
@@ -65,41 +65,48 @@ class ParserQuestionsAnswers implements ParserInterface
         $file = new simple_html_dom();
 
         // Load HTML from a string
+
         $file->load($curl_scraped_page);
 
-        foreach ($file->find('main') as $main) {
-            foreach ($main->find('tbody') as $tbody) {
-                foreach ($tbody->find('tr') as $tr) {
-                    $questionId = '';
-                    $answerId = '';
 
-                    //find question
-                    foreach ($tr->find('td.Question') as $tdQuestion) {
-                        foreach ($tdQuestion->find('a') as $aQuestion) {
-                            $question = $aQuestion->innertext;
+        if ($file->find('main') != null) {
+            foreach ($file->find('main') as $main) {
+                foreach ($main->find('tbody') as $tbody) {
+                    foreach ($tbody->find('tr') as $tr) {
+                        $questionId = '';
+                        $answerId = '';
 
-                            //adding new question
-                            $questionId = $this->addQuestion($db, $question);
+                        //find question
+                        foreach ($tr->find('td.Question') as $tdQuestion) {
+                            foreach ($tdQuestion->find('a') as $aQuestion) {
+                                $question = $aQuestion->innertext;
+
+                                //adding new question
+                                $questionId = $this->addQuestion($db, $question);
+                            }
                         }
-                    }
 
-                    //find answer
-                    foreach ($tr->find('td.AnswerShort') as $tdAnswer) {
-                        foreach ($tdAnswer->find('a') as $aAnswer) {
-                            $answer = $aAnswer->innertext;
+                        //find answer
+                        foreach ($tr->find('td.AnswerShort') as $tdAnswer) {
+                            foreach ($tdAnswer->find('a') as $aAnswer) {
+                                $answer = $aAnswer->innertext;
 
-                            //adding new answer
-                            $answerId = $this->addAnswer($db, $answer);
+                                //adding new answer
+                                $answerId = $this->addAnswer($db, $answer);
+                            }
                         }
-                    }
 
-                    //making connection between them
-                    $this->connectQuestionAndAnswer($db, $questionId, $answerId);
-                    if ($questionId != null && $answerId != null) {
-                        return 'success';
+                        //making connection between them
+                        $this->connectQuestionAndAnswer($db, $questionId, $answerId);
                     }
                 }
             }
+            echo 'finished with ' . $link . PHP_EOL;
+        } else {
+            echo 'cannot parse link ' . PHP_EOL;
+            $r = new \Redis();
+            $r->connect($_ENV['APP_HOST'], 6379);
+            $r->rPush('bad_links', 'links', '{"link": ' . $link . '}');
         }
     }
 

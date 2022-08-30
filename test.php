@@ -11,3 +11,6 @@ for ($i = 1; $i <= 4348; $i++) {
 
 echo 'links: ' . $r->lLen('linksPage') . "\n";
 
+echo 'badlinks: ' . $r->lLen('bad_links'). "\n";
+
+var_dump($r->lRange('bad_links', 0 , -1));
